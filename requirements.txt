@@ -1,0 +1,8 @@
+MySQL-python
+django
+django-cors-headers
+djangorestframework==2.3.13
+pycrypto
+PyJWT
+requests
+-e git+git@bitbucket.org:jstubbs/agave_common.git#egg=agave_common
