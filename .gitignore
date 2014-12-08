@@ -49,7 +49,7 @@ coverage.xml
 
 # Django stuff:
 *.log
-agave_id/local_settings.py
+agave_clients/local_settings.py
 
 # Sphinx documentation
 docs/_build/
