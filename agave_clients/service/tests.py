@@ -20,12 +20,18 @@ import requests
 from common.error import Error
 from agave_clients.service import views
 
-# -------
-# WARNING
-# -------
+# ------------------------
+# INSTRUCTIONS AND WARNING
+# ------------------------
 # These tests run against the APIM instance and database included in the local_settings.py file. 
 # That database MIGHT BE CHANGED as a result of running these tests.
-
+#
+# Run the tests with:
+# python manage.py test service
+#
+# --------------
+# Configuration:
+# -------------
 # User credentials to run the tests against. This account must be valid in some user store configured for
 # the API Manager instance located at settings.APIM_STORE_SERVICES_BASE_URL.
 USERNAME = 'jdoe'
