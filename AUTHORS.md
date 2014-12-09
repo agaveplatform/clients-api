@@ -1,4 +1,4 @@
-## Agave Multi-tenant Hosted Identity ##
+## Agave Clients ##
 
 Authors
 -------
