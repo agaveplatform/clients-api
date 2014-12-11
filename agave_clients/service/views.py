@@ -19,7 +19,7 @@ from common import auth
 from common.error import Error
 from common.responses import error_dict, success_dict, error_response, success_response
 
-from service.models import IdnOauthConsumerApps, AmApplicationKeyMapping
+from agave_clients.service.models import IdnOauthConsumerApps, AmApplicationKeyMapping
 
 
 

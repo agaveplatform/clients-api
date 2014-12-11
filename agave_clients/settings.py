@@ -6,9 +6,12 @@ import os
 
 # sensitive settings:
 try:
-    from local_settings import *
+    from deployment_settings import *
 except:
-    pass
+    try:
+        from local_settings import *
+    except:
+        from local_settings_example import *
 
 # ---------------
 # AUTHENTICATION
@@ -150,7 +153,7 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'agave_clients.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'wsgi.application'
+WSGI_APPLICATION = 'agave_clients.wsgi.application'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -167,7 +170,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'service',
+    'agave_clients.service',
     'django.contrib.admin',
     'rest_framework',
     'corsheaders',
@@ -217,6 +220,9 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # sensitive settings:
 try:
-    from local_settings import *
+    from deployment_settings import *
 except:
-    pass
+    try:
+        from local_settings import *
+    except:
+        from local_settings_example import *

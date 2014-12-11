@@ -12,13 +12,6 @@ framework.
 
 """
 import os
-import sys
-HERE = os.path.dirname(os.path.realpath(__file__))
-for idx, p in enumerate(sys.path):
-    if p == HERE:
-        sys.path.pop(idx)
-
-sys.path.append(os.path.abspath(os.path.join(HERE,'..')))
 
 # We defer to a DJANGO_SETTINGS_MODULE already in the environment. This breaks
 # if running multiple sites in the same mod_wsgi process. To fix this, use
