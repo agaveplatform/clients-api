@@ -23,7 +23,7 @@ AUTH_FUNC = 'basicauth'
 # -------------------------------------------
 # WSO2 server configuration for API endpoint
 # -------------------------------------------
-APIM_STORE_SERVICES_BASE_URL = "https://" + TENANT_HOST + "/store/site/blocks"
+APIM_STORE_SERVICES_BASE_URL = "https://" + tenant_host + "/store/site/blocks"
 STORE_AUTH_URL = "/user/login/ajax/login.jag"
 STORE_SUBSCRIPTION_URL = '/subscription/subscription-add/ajax/subscription-add.jag'
 STORE_REMOVE_SUB_URL = '/subscription/subscription-remove/ajax/subscription-remove.jag'

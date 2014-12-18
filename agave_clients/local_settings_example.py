@@ -3,7 +3,7 @@
 # -----------------------------------
 
 # The host name or domain name for the API Manager instance that this instance of the service should
-# communicate with.
+# communicate with. NOTE: Only used when NOT running in docker
 TENANT_HOST = 'agave-staging.tacc.utexas.edu'
 
 # ------------------------------
@@ -20,6 +20,15 @@ DEBUG = True
 # the USE_LIVE_FOR_TESTS': True setting.
 TEST_RUNNER = 'agave_clients.testrunner.ByPassableDBDjangoTestSuiteRunner'
 
+import os
+HERE = os.path.dirname(os.path.realpath(__file__))
+if os.path.exists(os.path.join(HERE, 'running_in_docker')):
+    tenant_host = os.environ.get('HOST_IP') or '172.17.42.1'
+    mysql_db = os.environ.get('MYSQL_PORT_3306_TCP_ADDR') or '172.17.42.1'
+else:
+    mysql_db = TENANT_HOST
+    tenant_host = TENANT_HOST
+
 # ----------------------
 # DATABASE CONNECTIVITY
 # ----------------------
@@ -30,7 +39,7 @@ DATABASES = {
         'NAME': 'apimgtdb',
         'USER': 'superadmin',
         'PASSWORD': 'foo', # UPDATED FROM STACHE ENTRY
-        'HOST': TENANT_HOST,
+        'HOST': mysql_db,
         'PORT': '3306',
         # When running the test suite, when this setting is True, the test runner will not create a
         # test database. This is required for the clients service tests, since they rely on
