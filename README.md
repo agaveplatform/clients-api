@@ -8,7 +8,7 @@ of WSO2 API Manager and presumes the application data are stored in a MySQL data
 ## Deploying with Fig ##
 
 You can start up the entire Agave Auth infrastructure (including the clients service) with the startup.sh script
-provided in the deployment directory of this repository. he only dependencies are docker and Fig. Install each
+provided in the deployment directory of this repository. The only dependencies are docker and Fig. Install each
 and then execute:
 
 ```
@@ -17,8 +17,8 @@ and then execute:
 deployment/startup.sh
 ```
 
-In addition to the clients service, oauth infrastructure (apim and mysql) and the hosted identity infrastructure
-(agave_id and ldap) will be started as well. 
+In addition to the clients service, the oauth infrastructure (apim and mysql) and the hosted identity infrastructure
+(agave_id and ldap) will be started as well.
 
 ## Deploying with Docker ##
 You can deploy an instance of the Agave Clients service on your local machine with a single command: the only
