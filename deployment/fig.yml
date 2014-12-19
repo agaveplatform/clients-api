@@ -50,6 +50,6 @@ ldap:
     - "10389:389"
 
 mysql:
-  image: jstubbs/apim_mysql_base
+  image: jstubbs/apim_mysql_base:0.1
   ports:
     - "3306:3306"
