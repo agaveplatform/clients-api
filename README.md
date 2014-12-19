@@ -17,6 +17,9 @@ and then execute:
 deployment/startup.sh
 ```
 
+In addition to the clients service, oauth infrastructure (apim and mysql) and the hosted identity infrastructure
+(agave_id and ldap) will be started as well. 
+
 ## Deploying with Docker ##
 You can deploy an instance of the Agave Clients service on your local machine with a single command: the only
 dependency is docker. Simply execute:
