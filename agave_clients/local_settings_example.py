@@ -23,11 +23,23 @@ TEST_RUNNER = 'agave_clients.testrunner.ByPassableDBDjangoTestSuiteRunner'
 import os
 HERE = os.path.dirname(os.path.realpath(__file__))
 if os.path.exists(os.path.join(HERE, 'running_in_docker')):
-    tenant_host = os.environ.get('HOST_IP') or '172.17.42.1'
-    mysql_db = os.environ.get('MYSQL_PORT_3306_TCP_ADDR') or '172.17.42.1'
+    # first, check to see if links are available (either from fig or directly from docker):
+    if os.environ.get('HOST_IP') and os.environ.get('MYSQL_PORT_3306_TCP_ADDR'):
+        tenant_host = os.environ.get('HOST_IP')
+        mysql_db = os.environ.get('MYSQL_PORT_3306_TCP_ADDR')
+    # otherwise, use service discovery:
+    else:
+        # if tenant_id has been defined in the environment used that, otherwise, default to 'dev':
+        tenant_id = os.environ.get('tenant_id', 'dev')
+        tenant_host = 'apim.' + tenant_id + '.agave.tacc.utexas.edu'
+        mysql_db = 'mysql.' + tenant_host
+
 else:
     mysql_db = TENANT_HOST
     tenant_host = TENANT_HOST
+
+print "Using mysql_db: ", mysql_db
+print "Using tenant_host: ", tenant_host
 
 # ----------------------
 # DATABASE CONNECTIVITY
