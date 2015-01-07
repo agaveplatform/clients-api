@@ -31,8 +31,8 @@ if os.path.exists(os.path.join(HERE, 'running_in_docker')):
     else:
         # if tenant_id has been defined in the environment used that, otherwise, default to 'dev':
         tenant_id = os.environ.get('tenant_id', 'dev')
-        tenant_host = 'apim.' + tenant_id + '.agave.tacc.utexas.edu'
-        mysql_db = 'mysql.' + tenant_host
+        tenant_host = 'apim.' + tenant_id + '.agave.tacc.utexas.edu:9443'
+        mysql_db = 'mysql.' + tenant_id + '.agave.tacc.utexas.edu'
 
 else:
     mysql_db = TENANT_HOST
