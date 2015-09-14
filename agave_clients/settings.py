@@ -10,7 +10,8 @@ try:
 except:
     try:
         from local_settings import *
-    except:
+    except Exception as e:
+        print "Unable to import local_settings" + str(e)
         from local_settings_example import *
 
 # ---------------
@@ -23,6 +24,7 @@ AUTH_FUNC = 'basicauth'
 # -------------------------------------------
 # WSO2 server configuration for API endpoint
 # -------------------------------------------
+TENANT_HOST = tenant_host
 APIM_STORE_SERVICES_BASE_URL = "https://" + tenant_host + "/store/site/blocks"
 STORE_AUTH_URL = "/user/login/ajax/login.jag"
 STORE_SUBSCRIPTION_URL = '/subscription/subscription-add/ajax/subscription-add.jag'
@@ -49,7 +51,7 @@ MANAGERS = ADMINS
 # This setting is required to direct ORM appropriately when running multiple DBs.
 # Note: It only handles one LDAP DB; if multiple LDAPs are needed, you will
 # have to update this router.
-DATABASE_ROUTERS = ['ldapdb.router.Router']
+# DATABASE_ROUTERS = ['ldapdb.router.Router']
 
 # Order matters here - first authentication 'success' sticks.
 AUTHENTICATION_BACKENDS = (
