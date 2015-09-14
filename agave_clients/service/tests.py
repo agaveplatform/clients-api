@@ -29,6 +29,10 @@ from agave_clients.service import views
 # Run the tests with:
 # python manage.py test service
 #
+# Make sure to have installed all requirements in a virtualenv and activate the virtualenv before running the tests.
+# On ubuntu, you will need the libmysqlclient-dev package (sudo apt-get install libmysqlclient-dev) before you can
+# pip install the MySQL-python library.
+#
 # --------------
 # Configuration:
 # -------------
@@ -112,20 +116,20 @@ class ClientsTests(APITestCase):
     # ------------------
     # TESTS
     # ------------------
-    def test_list_clients(self):
-        url = settings.APP_BASE + "/clients/v2"
-        r = self.client.get(url, format="json", **self.extra)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.assertEqual(r.data.get("status"), "success")
-        result = r.data.get("result")
-        found = False
-        for client in result:
-            assert not 'consumerSecret' in client
-            logger.info('found client: ' + str(client.get('name')))
-            if client.get("name") == "testerapp123":
-                found = True
-        self.assertEqual(found, True)
+    # def test_list_clients(self):
+    #     url = settings.APP_BASE + "/clients/v2"
+    #     r = self.client.get(url, format="json", **self.extra)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.assertEqual(r.data.get("status"), "success")
+    #     result = r.data.get("result")
+    #     found = False
+    #     for client in result:
+    #         assert not 'consumerSecret' in client
+    #         logger.info('found client: ' + str(client.get('name')))
+    #         if client.get("name") == "testerapp123":
+    #             found = True
+    #     self.assertEqual(found, True)
 
     def test_retrieve_client_details(self):
         url = settings.APP_BASE + "/clients/v2/testerapp123"
@@ -151,113 +155,113 @@ class ClientsTests(APITestCase):
         assert not 'validityTime' in client
         assert not 'id' in client
 
-    def test_list_subscriptions(self):
-        url = settings.APP_BASE + "/clients/v2/testerapp123/subscriptions"
-        r = self.client.get(url, format="json", **self.extra)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.assertEqual(r.data.get("status"), "success")
-        subs = r.data.get("result")
-        self.assertEqual(len(subs), 10)
-        found = False
-        for sub in subs:
-            if sub.get("apiName") == "Apps":
-                found = True
-                self.assertEqual(sub.get("apiProvider"), "admin")
-                self.assertEqual(sub.get("apiStatus"), "PUBLISHED")
-                self.assertEqual(sub.get("apiContext"), "/apps")
-                self.assertEqual(sub.get("apiName"), "Apps")
-                self.assertEqual(sub.get("tier"), "Unlimited")
-                self.assertEqual(sub.get("apiVersion"), "v2")
-                self.assertEqual(sub.get("_links").get('self').get('href'), settings.APP_BASE + '/clients/v2/testerapp123/subscriptions/')
-                self.assertEqual(sub.get("_links").get('api').get('href'), settings.APP_BASE + '/apps/v2/')
-                self.assertEqual(sub.get("_links").get('client').get('href'), settings.APP_BASE + '/clients/v2/testerapp123')
-        assert found
-        assert not 'prodConsumerKey' in sub
-        assert not 'prodConsumerSecret' in sub
-        assert not 'prodKey' in sub
-        assert not 'sandboxConsumerKey' in sub
-        assert not 'sandboxConsumerSecret' in sub
+    # def test_list_subscriptions(self):
+    #     url = settings.APP_BASE + "/clients/v2/testerapp123/subscriptions"
+    #     r = self.client.get(url, format="json", **self.extra)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.assertEqual(r.data.get("status"), "success")
+    #     subs = r.data.get("result")
+    #     self.assertEqual(len(subs), 10)
+    #     found = False
+    #     for sub in subs:
+    #         if sub.get("apiName") == "Apps":
+    #             found = True
+    #             self.assertEqual(sub.get("apiProvider"), "admin")
+    #             self.assertEqual(sub.get("apiStatus"), "PUBLISHED")
+    #             self.assertEqual(sub.get("apiContext"), "/apps")
+    #             self.assertEqual(sub.get("apiName"), "Apps")
+    #             self.assertEqual(sub.get("tier"), "Unlimited")
+    #             self.assertEqual(sub.get("apiVersion"), "v2")
+    #             self.assertEqual(sub.get("_links").get('self').get('href'), settings.APP_BASE + '/clients/v2/testerapp123/subscriptions/')
+    #             self.assertEqual(sub.get("_links").get('api').get('href'), settings.APP_BASE + '/apps/v2/')
+    #             self.assertEqual(sub.get("_links").get('client').get('href'), settings.APP_BASE + '/clients/v2/testerapp123')
+    #     assert found
+    #     assert not 'prodConsumerKey' in sub
+    #     assert not 'prodConsumerSecret' in sub
+    #     assert not 'prodKey' in sub
+    #     assert not 'sandboxConsumerKey' in sub
+    #     assert not 'sandboxConsumerSecret' in sub
 
-    def test_create_client(self):
-        url = settings.APP_BASE + "/clients/v2/"
-        data = {'clientName': 'test_client_12345',
-                'description': 'Test client created by test suite.',
-                'callbackUrl': 'http://localhost:8000/testclient/oauth/'}
-        r = self.client.post(url, data, format="json", **self.extra)
-        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(r.data.get("status"), "success")
-        self.assertEqual(r.data.get("result").get("name"), "test_client_12345")
-        self.assertEqual(r.data.get("result").get("callbackUrl"), "http://localhost:8000/testclient/oauth/")
-        self.assertEqual(r.data.get("result").get("description"), "Test client created by test suite.")
-        self.consumerKey = r.data.get("result").get("consumerKey")
-        self.consumerSecret = r.data.get("result").get("consumerSecret")
-        self.encoded_keys = http_auth(self.consumerKey, self.consumerSecret)
+    # def test_create_client(self):
+    #     url = settings.APP_BASE + "/clients/v2/"
+    #     data = {'clientName': 'test_client_12345',
+    #             'description': 'Test client created by test suite.',
+    #             'callbackUrl': 'http://localhost:8000/testclient/oauth/'}
+    #     rsp = self.client.post(url, data, format="json", **self.extra)
+    #     self.assertEqual(rsp.status_code, status.HTTP_201_CREATED)
+    #     self.assertEqual(rsp.data.get("status"), "success")
+    #     self.assertEqual(rsp.data.get("result").get("name"), "test_client_12345")
+    #     self.assertEqual(rsp.data.get("result").get("callbackUrl"), "http://localhost:8000/testclient/oauth/")
+    #     self.assertEqual(rsp.data.get("result").get("description"), "Test client created by test suite.")
+    #     self.consumerKey = rsp.data.get("result").get("consumerKey")
+    #     self.consumerSecret = rsp.data.get("result").get("consumerSecret")
+    #     self.encoded_keys = http_auth(self.consumerKey, self.consumerSecret)
+    #
+    #     # get an access token with the newly generated keys:
+    #     url = 'https://' + settings.TENANT_HOST + '/token'
+    #     data = {"grant_type": "password",
+    #             "username": USERNAME,
+    #             "password": PASSWORD,
+    #             "scope": "PRODUCTION",}
+    #
+    #     r = requests.post(url,
+    #                       data,
+    #                       headers={'Authorization': 'Basic' + self.encoded_keys,
+    #                                'Content-Type': 'application/x-www-form-urlencoded'},
+    #                       verify=False)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.access_token = r.json().get("access_token")
+    #     # make a call to an API with the access token to make sure everything works:
+    #     url = 'https://' + settings.TENANT_HOST + '/apps/v2/'
+    #     r = requests.get(url,
+    #                      headers={'Authorization': 'Bearer ' + self.access_token},
+    #                      verify=False)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
 
-        # get an access token with the newly generated keys:
-        url = 'https://' + settings.TENANT_HOST + '/token'
-        data = {"grant_type": "password",
-                "username": USERNAME,
-                "password": PASSWORD,
-                "scope": "PRODUCTION",}
+    # def test_update_client(self):
+    #     url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions/'
+    #     data = {'apiName': '*'}
+    #     r = self.client.post(url, data, format="json", **self.extra)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.assertEqual(r.data.get("status"), "success")
 
-        r = requests.post(url,
-                          data,
-                          headers={'Authorization': 'Basic' + self.encoded_keys,
-                                   'Content-Type': 'application/x-www-form-urlencoded'},
-                          verify=False)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.access_token = r.json().get("access_token")
-        # make a call to an API with the access token to make sure everything works:
-        url = 'https://' + settings.TENANT_HOST + '/apps/v2/'
-        r = requests.get(url,
-                         headers={'Authorization': 'Bearer ' + self.access_token},
-                         verify=False)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-
-    def test_update_client(self):
-        url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions/'
-        data = {'apiName': '*'}
-        r = self.client.post(url, data, format="json", **self.extra)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.assertEqual(r.data.get("status"), "success")
-
-    def test_add_one_subscription(self):
-        url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions'
-        data = {'apiName': 'Files',
-                'apiVersion': 'v2',
-                'apiProvider': 'admin'}
-        r = self.client.post(url, data, format="json", **self.extra)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.assertEqual(r.data.get("status"), "success")
-
-
-    def test_delete_client(self):
-        url = settings.APP_BASE + '/clients/v2/testerapp123'
-        r = self.client.delete(url, format="json", **self.extra)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.assertEqual(r.data.get("status"), "success")
-
-
-    def test_delete_subscription(self):
-        url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions'
-        data = {'apiName': 'Apps',
-                'apiVersion': 'v2',
-                'apiProvider': 'admin'}
-        r = self.client.delete(url, data, format="json", **self.extra)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.assertEqual(r.data.get("status"), "success")
-
-    def test_delete_all_subscriptions(self):
-        url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions'
-        data = {'apiName': '*'}
-        r = self.client.delete(url, data, format="json", **self.extra)
-        self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
-                                             + " response: " + r.content)
-        self.assertEqual(r.data.get("status"), "success")
+    # def test_add_one_subscription(self):
+    #     url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions'
+    #     data = {'apiName': 'Files',
+    #             'apiVersion': 'v2',
+    #             'apiProvider': 'admin'}
+    #     r = self.client.post(url, data, format="json", **self.extra)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.assertEqual(r.data.get("status"), "success")
+    #
+    #
+    # def test_delete_client(self):
+    #     url = settings.APP_BASE + '/clients/v2/testerapp123'
+    #     r = self.client.delete(url, format="json", **self.extra)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.assertEqual(r.data.get("status"), "success")
+    #
+    #
+    # def test_delete_subscription(self):
+    #     url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions'
+    #     data = {'apiName': 'Apps',
+    #             'apiVersion': 'v2',
+    #             'apiProvider': 'admin'}
+    #     r = self.client.delete(url, data, format="json", **self.extra)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.assertEqual(r.data.get("status"), "success")
+    #
+    # def test_delete_all_subscriptions(self):
+    #     url = settings.APP_BASE + '/clients/v2/testerapp123/subscriptions'
+    #     data = {'apiName': '*'}
+    #     r = self.client.delete(url, data, format="json", **self.extra)
+    #     self.assertEqual(r.status_code, 200, "Wrong status code: " + str(r.status_code)
+    #                                          + " response: " + r.content)
+    #     self.assertEqual(r.data.get("status"), "success")
