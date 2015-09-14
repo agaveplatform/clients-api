@@ -79,7 +79,7 @@ class Clients(APIView):
                                                     description=request.DATA.get('description',''),
                                                     callbackUrl=request.DATA.get('callbackUrl', ''))
             logger.info("Application created, id:" + str(application.get('application_id')))
-            add_apis(request.wso2_cookies, application.get('id'))
+            # add_apis(request.wso2_cookies, application.get('id'))
         except Error as e:
             return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -254,23 +254,25 @@ def create_client_application(cookies, username, application_name, tier=settings
     if callbackUrl:
         params['callbackUrl'] = callbackUrl
     try:
-        r = requests.post(url, cookies=cookies, params=params, verify=False)
+        rsp = requests.post(url, cookies=cookies, params=params, verify=False)
     except Exception as e:
         raise Error("Unable to create application; " + str(e))
-    if not r.status_code == 200:
+    if not rsp.status_code == 200:
         raise Error("Unable to create application; status code:" +
-                    str(r.status_code))
-    if r.json().get('error'):
+                    str(rsp.status_code))
+    if rsp.json().get('error'):
         raise Error("Unable to create application: " +
-                    str(r.json().get('message')))
-    logger.info("Response from WSO2 ADD_APP: " + str(r.json()) + " Status code: " + str(r.status_code))
+                    str(rsp.json().get('message')))
+    logger.info("Response from WSO2 ADD_APP: " + str(rsp.json()) + " Status code: " + str(rsp.status_code))
 
     # nothing returned in the wso2 response and the client credentials are not generated,
     # so we need to get the client just created and generate credentials for it.
     # Need to generate credentials FIRST -- otherwise, get_application will end up generating them which
     # will cause the consumerSecret to be lost.
-    credentials = generate_credentials(cookies, application_name)
+
     app = get_application(cookies, username, application_name, sanitize=False)
+    add_apis(cookies, app.get('id'))
+    credentials = generate_credentials(cookies, application_name)
     app.update(credentials)
     logger.info("Inside create_client_application after updating with credentials; app: " + str(app)
                 + "credentials: " + str(credentials))
@@ -303,6 +305,13 @@ def add_api(cookies, application_id, api_name, api_version, api_provider, tier=s
     except Exception as e:
         raise Error("Unable to subscribe to API " + api_name +
                     "; message: " + str(e))
+    try:
+        json_rsp = r.json()
+    except Exception as e:
+        raise Error("Unable to subscribe to API " + api_name + "; no JSON received.")
+    # APIM now throws an error if the API is subscribed to already.
+    if json_rsp.get('message') and 'Subscription already exists' in json_rsp.get('message'):
+        return
     if not r.status_code == 200:
         raise Error("Unable to subscribe to API " + api_name +
                     "; status code: " + str(r.status_code))
@@ -328,15 +337,15 @@ def generate_credentials(cookies, application_name):
             'validityTime' : '14400',}
     logger.info("application name: " + application_name)
     try:
-        r = requests.post(url, cookies=cookies, data=data, verify=False)
-        logger.info("Status code:" + str(r.status_code) + "content: " + str(r.content))
+        rsp = requests.post(url, cookies=cookies, data=data, verify=False)
+        logger.info("Status code:" + str(rsp.status_code) + "content: " + str(rsp.content))
     except Exception as e:
         raise Error("Unable to generate credentials for " + str(application_name) + "; message: " + str(e))
-    if not r.status_code == 200:
-        raise Error("Unable to generate credentials for " + application_name +"; status code: " + str(r.status_code))
-    if not r.json().get("data"):
+    if not rsp.status_code == 200:
+        raise Error("Unable to generate credentials for " + application_name +"; status code: " + str(rsp.status_code))
+    if not rsp.json().get("data"):
         raise Error("Unable to generate credentials for " + application_name)
-    return r.json().get('data').get('key')
+    return rsp.json().get('data').get('key')
 
 def retrieve_application_key(cookies, application_id, application_name):
     """
@@ -421,6 +430,8 @@ def get_applications(cookies, username, sanitize=True):
     apps = r.json().get("applications")
     for app in apps:
         application_name = app.get("name")
+        if application_name == 'testerapp123':
+            import pdb; pdb.set_trace()
         try:
             application_key = retrieve_application_key(cookies, app.get("id"), application_name)
             # credentials = generate_credentials(cookies, application_name=application_name)
@@ -459,6 +470,11 @@ def sanitize_app(app):
     app.pop("validityTime", None)
     app.pop("status", None)
     app.pop("keyState", None)
+    app.pop("tokenDetails", None)
+    app.pop("apiCount", None)
+    app.pop("tokenScope", None)
+    app.pop("appDetails", None)
+    app.pop("groupId", None)
 
 
 
