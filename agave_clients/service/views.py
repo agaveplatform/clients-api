@@ -270,9 +270,9 @@ def create_client_application(cookies, username, application_name, tier=settings
     # Need to generate credentials FIRST -- otherwise, get_application will end up generating them which
     # will cause the consumerSecret to be lost.
 
+    credentials = generate_credentials(cookies, application_name)
     app = get_application(cookies, username, application_name, sanitize=False)
     add_apis(cookies, app.get('id'))
-    credentials = generate_credentials(cookies, application_name)
     app.update(credentials)
     logger.info("Inside create_client_application after updating with credentials; app: " + str(app)
                 + "credentials: " + str(credentials))
@@ -430,13 +430,9 @@ def get_applications(cookies, username, sanitize=True):
     apps = r.json().get("applications")
     for app in apps:
         application_name = app.get("name")
-        if application_name == 'testerapp123':
-            import pdb; pdb.set_trace()
         try:
             application_key = retrieve_application_key(cookies, app.get("id"), application_name)
-            # credentials = generate_credentials(cookies, application_name=application_name)
             app['consumerKey'] = application_key
-        # except Error as e:
         except Exception as e:
             # It is valid for applications to not have credentials;
             logger.error("Unable to retrieve credentials for " + application_name + " in get_applications: " + str(e))
