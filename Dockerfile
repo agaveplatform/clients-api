@@ -1,3 +1,6 @@
+# Agave clients service for generating OAuth2 client applications for the WSO2 API Manager platform.
+# Image: jstubbs/agave_clients
+
 FROM jstubbs/template_compiler
 MAINTAINER Joe Stubbs
 
