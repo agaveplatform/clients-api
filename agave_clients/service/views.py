@@ -37,6 +37,7 @@ AGAVE_APIS = [{'name':'Apps', 'version':settings.AGAVE_API_VERSION, 'provider':'
             {'name':'Systems', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
             {'name':'Transforms', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},]
 
+AGAVE_APIS.extend(settings.ADDITIONAL_APIS)
 
 class Clients(APIView):
 

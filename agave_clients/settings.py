@@ -219,6 +219,7 @@ REST_FRAMEWORK = {
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
+ADDITIONAL_APIS = []
 
 # sensitive settings:
 try:
