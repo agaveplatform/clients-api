@@ -152,9 +152,9 @@ class ClientSubscriptions(APIView):
     def post(self, request, client_name, format=None):
         """
         Add subscriptions to the client provided.
-        api_name -- (REQUIRED) The name of the API to subscribe to; Send api_name=* to subscribe to all APIs.
-        api_version -- Version of the API to be added.
-        api_provider -- Provider of the API to be added.
+        apiNme -- (REQUIRED) The name of the API to subscribe to; Send api_name=* to subscribe to all APIs.
+        apiVersion -- Version of the API to be added.
+        apiProvider -- Provider of the API to be added.
         tier -- tier level for subscriptions, default is unlimited.
         """
         # We want these endpoints to work even when the backend userstore is not our LDAP. Therefore,
@@ -162,12 +162,11 @@ class ClientSubscriptions(APIView):
         parms = ['apiName']
         try:
             parm_values = get_parms_from_request(request.DATA, parms)
-            application_id = get_application_id(request.wso2_cookies, client_name)
             if parm_values['apiName'] == '*':
-                add_apis(request.wso2_cookies, application_id, tier=request.DATA.get('tier', settings.DEFAULT_TIER))
+                add_apis(request.wso2_cookies, client_name, tier=request.DATA.get('tier', settings.DEFAULT_TIER))
             else:
                 add_api(request.wso2_cookies,
-                        application_id,
+                        client_name,
                         parm_values['apiName'],
                         request.DATA.get('apiVersion'),
                         request.DATA.get('apiProvider'),
@@ -195,12 +194,11 @@ class ClientSubscriptions(APIView):
         parms = ['apiName']
         try:
             parm_values = get_parms_from_request(request.DATA, parms)
-            application_id = get_application_id(request.wso2_cookies, client_name)
             if parm_values['apiName'] == '*':
-                remove_apis(request.wso2_cookies, client_name, application_id)
+                remove_apis(request.wso2_cookies, client_name)
             else:
                 remove_api(request.wso2_cookies,
-                        application_id,
+                        client_name,
                         parm_values['apiName'],
                         request.DATA.get('apiVersion'),
                         request.DATA.get('apiProvider'))
@@ -245,7 +243,7 @@ def create_client_application(cookies, username, application_name, tier=settings
     if not found:
         raise Error(message="tier value must be one of: [Bronze, Gold, Unlimited, Silver].")
 
-    params = {'action': 'addApplication',
+    params = {'action': 'addAPIApplication',
               'application': application_name,
               'tier': tier,
               'description': '',
@@ -291,14 +289,14 @@ def create_client_application(cookies, username, application_name, tier=settings
 
     return app
 
-def add_api(cookies, application_id, api_name, api_version, api_provider, tier=settings.DEFAULT_TIER):
+def add_api(cookies, client_name, api_name, api_version, api_provider, tier=settings.DEFAULT_TIER):
     url = settings.APIM_STORE_SERVICES_BASE_URL + settings.STORE_SUBSCRIPTION_URL
-    data = {'action': 'addSubscription',
+    data = {'action': 'addAPISubscription',
             'name': api_name,
             'version': api_version,
             'provider': api_provider,
             'tier': tier,
-            'applicationId': application_id}
+            'applicationName': client_name}
     try:
         r = requests.post(url, cookies=cookies, data=data, verify=False)
         logger.info("add_api response:" + str(r.json()))
@@ -319,12 +317,12 @@ def add_api(cookies, application_id, api_name, api_version, api_provider, tier=s
     if r.json().get('error'):
         raise Error("Unable to subscribe to API " + api_name + " error: " + str(r.json().get('error')))
 
-def add_apis(cookies, application_id, tier=settings.DEFAULT_TIER):
+def add_apis(cookies, client_name, tier=settings.DEFAULT_TIER):
     """
     Subscribes to Agave APIs for an application at level 'tier'.
     """
     for api in AGAVE_APIS:
-        add_api(cookies, application_id, api.get('name'), api.get('version'), api.get('provider'))
+        add_api(cookies, client_name, api.get('name'), api.get('version'), api.get('provider'))
 
 def generate_credentials(cookies, application_name, callbackUrl=None):
     """
@@ -386,13 +384,13 @@ def delete_client(cookies, application_name):
                     str(r.status_code))
     logger.info("response: " + str(r) + "json: " + str(r.json()))
 
-def remove_api(cookies, application_id, api_name, api_version, api_provider):
+def remove_api(cookies, client_name, api_name, api_version, api_provider):
     url = settings.APIM_STORE_SERVICES_BASE_URL + settings.STORE_REMOVE_SUB_URL
     data = {'action': 'removeSubscription',
             'name': api_name,
             'version': api_version,
             'provider': api_provider,
-            'applicationId': application_id}
+            'applicationName': client_name}
     try:
         r = requests.post(url, cookies=cookies, data=data, verify=False)
         logger.info("remove_api response:" + str(r.json()))
@@ -406,13 +404,13 @@ def remove_api(cookies, application_id, api_name, api_version, api_provider):
     if r.json().get('error'):
         raise Error("Unable to remove API " + + api_name)
 
-def remove_apis(cookies, application_name, application_id):
+def remove_apis(cookies, application_name):
     """
     Subscribes to Agave APIs for an application at level 'tier'.
     """
     subscriptions = get_subscriptions(cookies, application_name, sanitize=False)
     for api in subscriptions:
-        remove_api(cookies, application_id, api.get('name'), api.get('version'), api.get('provider'))
+        remove_api(cookies, application_name, api.get('name'), api.get('version'), api.get('provider'))
 
 
 def get_applications(cookies, username, sanitize=True):
@@ -505,7 +503,7 @@ def get_subscriptions(cookies, application_name, sanitize=True):
     Returns the subscriptions for an application.
     """
     url = settings.APIM_STORE_SERVICES_BASE_URL + settings.STORE_LIST_SUBS_URL
-    params = {'action': 'getAllSubscriptions'}
+    params = {'action': 'getAllSubscriptions', 'selectedApp': application_name}
     try:
         r = requests.get(url, cookies=cookies, params=params, verify=False)
     except Exception as e:
@@ -519,7 +517,7 @@ def get_subscriptions(cookies, application_name, sanitize=True):
     if not r.json().get("subscriptions"):
         raise Error("Unable to retrieve subscriptions; content: " + str(r.content))
     # WSO2 actually returns a list of applications, so we need to filter by the application_name
-    apps = r.json().get("subscriptions")
+    apps = r.json().get("subscriptions").get('applications')
     for app in apps:
         logger.info("app:" + app.get("name"))
         if app.get('name') == application_name:
@@ -536,8 +534,7 @@ def add_sub_hyperlinks(sub, client_name):
     """
     sub['_links'] = {'self': {'href': settings.APP_BASE + reverse('client_subscriptions',
                                                                   args=[client_name])},
-                     'api': {'href': settings.APP_BASE + sub.get('context')
-                                     + '/' + sub.get('version') + '/'},
+                     'api': {'href': settings.APP_BASE + sub.get('context') + '/'},
                      'client': {'href': settings.APP_BASE + reverse('client_details', args=[client_name])},
                      }
 
