@@ -243,7 +243,7 @@ def create_client_application(cookies, username, application_name, tier=settings
     if not found:
         raise Error(message="tier value must be one of: [Bronze, Gold, Unlimited, Silver].")
 
-    params = {'action': 'addAPIApplication',
+    params = {'action': 'addApplication',
               'application': application_name,
               'tier': tier,
               'description': '',
@@ -271,7 +271,7 @@ def create_client_application(cookies, username, application_name, tier=settings
 
     credentials = generate_credentials(cookies, application_name, callbackUrl)
     app = get_application(cookies, username, application_name, sanitize=False)
-    add_apis(cookies, app.get('id'))
+    add_apis(cookies, application_name)
     app.update(credentials)
     logger.info("Inside create_client_application after updating with credentials; app: " + str(app)
                 + "credentials: " + str(credentials))
