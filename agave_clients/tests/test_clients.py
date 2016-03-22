@@ -9,7 +9,8 @@
 # To run the test suite:
 # Make sure the clients service is running on BASE_URL defined below. In particular, to run the tests against the
 # django development server, simply:
-# 1. activate a virtualenv with the requirements installed.
+# 1. activate a virtualenv with the requirements installed. (Note that to build the virtualenv you may need to
+#    sudo apt-get install libmysqlclient-dev in Ubuntu distributions).
 # 2. Make sure test_settings.py is configured for the appropriate instance of APIM (see #3 above).
 # 3. start the dev server (e.g. python manage.py runserver 0.0.0.0:9000)
 # 4. run the tests by entering `py.test` in this directory.
@@ -199,6 +200,28 @@ def test_ensure_all_subscriptions_gone(headers, client_attrs):
     rsp = requests.get(url, headers=headers)
     subs = validate_response(rsp)
     assert len(subs) == 0
+
+def test_add_core_api_subscription(headers, client_attrs):
+    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
+    data = {'apiName': 'Files',
+            'apiVersion': 'v2',
+            'apiProvider': 'admin',
+            'tier': 'Unlimited'}
+    rsp = requests.post(url, data=data, headers=headers)
+    validate_response(rsp)
+
+def test_ensure_added_core_subscription_present(headers, client_attrs):
+    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
+    rsp = requests.get(url, headers=headers)
+    subs = validate_response(rsp)
+    for sub in subs:
+        if sub.get('apiName') == 'Files':
+            break
+    else:
+        # didn't find the subscription
+        assert False
+
+
 
 def test_delete_client(headers, client_attrs):
     url = '{}/clients/v2/{}'.format(BASE_URL, client_attrs.get('clientName'))
