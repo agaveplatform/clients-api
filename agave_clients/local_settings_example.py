@@ -6,7 +6,7 @@ import os
 
 # The host name or domain name for the API Manager instance that this instance of the service should
 # communicate with. NOTE: Only used when NOT running in docker
-TENANT_HOST = 'agave-staging.tacc.utexas.edu'
+TENANT_HOST = 'staging.agaveplatform.org'
 
 # if tenant_id has been defined in the environment used that, otherwise, default to 'dev':
 tenant_id = os.environ.get('tenant_id', 'dev')
@@ -30,9 +30,9 @@ TEST_RUNNER = 'agave_clients.testrunner.ByPassableDBDjangoTestSuiteRunner'
 # ------------------
 # BEANSTALK INSTANCE
 # ------------------
-BEANSTALK_SERVER = "iplant-qa.tacc.utexas.edu"
+BEANSTALK_SERVER = "beanstalkd"
 BEANSTALK_PORT = 11300
-BEANSTALK_TUBE = 'test.jfs'
+BEANSTALK_TUBE = 'sandbox.notifications.queue'
 BEANSTALK_SRV_CODE = '0001-001'
 TENANT_UUID = os.environ.get('tenant_uuid', '0001411570898814')
 

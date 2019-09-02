@@ -5,4 +5,4 @@ djangorestframework==2.3.13
 pycrypto
 PyJWT==0.1.9
 requests
--e git+https://jstubbs@bitbucket.org/jstubbs/agave_common.git#egg=agave_common
+-e git+https://bitbucket.com/agaveapi/agave_pycommon.git#egg=agave_common

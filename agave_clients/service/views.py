@@ -17,7 +17,7 @@ import requests
 
 from common import auth
 from common.error import Error
-from common.responses import error_dict, success_dict, error_response, success_response
+from common.responses import error_dict, success_dict, format_response, error_response, success_response
 
 from agave_clients.service.models import IdnOauthConsumerApps, AmApplicationKeyMapping
 
@@ -51,6 +51,7 @@ class Clients(APIView):
         username -- (REQUIRED)
         password -- (REQUIRED)
         """
+
         try:
             applications = get_applications(request.wso2_cookies, request.wso2_username,)
         except Error as e:
@@ -58,7 +59,7 @@ class Clients(APIView):
         except Exception as e:
             logger.error("Uncaught exception trying to retrieve clients: " + str(e))
             return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
-        return Response(success_dict(msg="Clients retrieved successfully.", result=applications))
+        return Response(format_response(response_data=applications, msg="Clients retrieved successfully.", query_dict=request.query_params))
 
     @auth.authenticated
     def post(self, request, format=None):
@@ -92,8 +93,8 @@ class Clients(APIView):
         secret = application.pop("consumerSecret", None)
         sanitize_app(application)
         application['consumerSecret'] = secret
-        return Response(success_dict(msg="Client created successfully.",
-                                     result=application),
+        return Response(format_response(msg="Client created successfully.",
+                                     response_data=application, query_dict=request.query_params),
                         status=status.HTTP_201_CREATED)
 
 class ClientDetails(APIView):
@@ -113,7 +114,7 @@ class ClientDetails(APIView):
             logger.error("Uncaught exception trying to remove client: " + str(e))
             return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
 
-        return Response(success_dict(msg="Client removed successfully."))
+        return Response(format_response(msg="Client removed successfully.", query_dict=request.query_params))
 
     @auth.authenticated
     def get(self, request, client_name, format=None):
@@ -127,7 +128,8 @@ class ClientDetails(APIView):
         except Exception as e:
             logger.error("Uncaught exception trying to retrieve client details: " + str(e))
             return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
-        return Response(success_dict(msg="Client details retrieved successfully.", result=app))
+        return Response(format_response(msg="Client details retrieved successfully.",
+                                        response_data=app, query_dict=request.query_params))
 
 class ClientSubscriptions(APIView):
     def perform_authentication(self, request):
@@ -146,7 +148,8 @@ class ClientSubscriptions(APIView):
             logger.error("Unhandled exception in ClientSubscription: " + str(e))
             return Response(error_dict(msg="Unable to retrieve subscriptions."),
                             status.HTTP_400_BAD_REQUEST)
-        return Response(success_dict(msg="Client subscriptions retrieved successfully.", result=subscriptions))
+        return Response(format_response(msg="Client subscriptions retrieved successfully.",
+                                     response_data=subscriptions, query_dict=request.query_params))
 
     @auth.authenticated
     def post(self, request, client_name, format=None):
@@ -178,10 +181,11 @@ class ClientSubscriptions(APIView):
             return Response(error_dict(msg="Unable to subscribe client to Agave APIs."),
                             status.HTTP_400_BAD_REQUEST)
         if parm_values['apiName'] == '*':
-            return Response(success_dict(msg="Client " + client_name + " has been subscribed to Agave APIs."))
+            return Response(format_response(msg="Client " + client_name + " has been subscribed to Agave APIs.",
+                                            query_dict=request.query_params))
         else:
-            return Response(success_dict(msg="Client " + client_name + " has been subscribed to "
-                                             + parm_values['apiName'] + "."))
+            return Response(format_response(msg="Client " + client_name + " has been subscribed to "
+                                             + parm_values['apiName'] + ".", query_dict=request.query_params))
 
     @auth.authenticated
     def delete(self, request, client_name, format=None):
@@ -209,11 +213,11 @@ class ClientSubscriptions(APIView):
             return Response(error_dict(msg="Unable to remove API from client."),
                             status.HTTP_400_BAD_REQUEST)
         if parm_values['apiName'] == '*':
-            return Response(success_dict(msg="All APIs have been removed from the client "
-                                             + client_name + "."))
+            return Response(format_response(msg="All APIs have been removed from the client "
+                                             + client_name + ".", query_dict=request.query_params))
         else:
-            return Response(success_dict(msg=parm_values['apiName'] + " has been removed from the client " +
-                                             client_name + "."))
+            return Response(format_response(msg=parm_values['apiName'] + " has been removed from the client " +
+                                             client_name + ".", query_dict=request.query_params))
 
 
 def get_parms_from_request(request_dict, parms):
@@ -287,6 +291,8 @@ def create_client_application(cookies, username, application_name, tier=settings
             logger.info("Got an exception trying to update the callback URL. Exception type: "+
             str(type(e)) + " Exception: " + str(e))
 
+    # TODO: assuming everything worked as expected, we write a CLIENT_CREATED event to the notification queue
+
     return app
 
 def add_api(cookies, client_name, api_name, api_version, api_provider, tier=settings.DEFAULT_TIER):
@@ -316,6 +322,9 @@ def add_api(cookies, client_name, api_name, api_version, api_provider, tier=sett
                     "; status code: " + str(r.status_code))
     if r.json().get('error'):
         raise Error("Unable to subscribe to API " + api_name + " error: " + str(r.json().get('error')))
+
+    # TODO: assuming everything worked as expected, we write a CLIENT_SUBSCRIBE_API event to the notification queue
+
 
 def add_apis(cookies, client_name, tier=settings.DEFAULT_TIER):
     """
@@ -382,6 +391,9 @@ def delete_client(cookies, application_name):
     if not r.status_code == 200:
         raise Error("Unable to create application; status code:" +
                     str(r.status_code))
+    # TODO: assuming everything worked as expected, we write a CLIENT_DELETED event to the notification queue
+    #else:
+
     logger.info("response: " + str(r) + "json: " + str(r.json()))
 
 def remove_api(cookies, client_name, api_name, api_version, api_provider):
@@ -403,6 +415,10 @@ def remove_api(cookies, client_name, api_name, api_version, api_provider):
                     "; status code: " + str(r.status_code))
     if r.json().get('error'):
         raise Error("Unable to remove API " + + api_name)
+
+    # TODO: assuming everything worked as expected, we write a CLIENT_UNSUBSCRIBE_API event to the notification queue
+
+
 
 def remove_apis(cookies, application_name):
     """

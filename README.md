@@ -27,7 +27,7 @@ dependency is docker. Simply execute:
 ```
 #!bash
 
-docker run -d -p 8000:80 jstubbs/agave_clients
+docker run -d -p 8000:80 agaveplatform/agave_clients:latest
 ```
 
 This will start up an instance of the service in a container fronted by Apache web server listening on port 8000.

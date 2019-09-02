@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+
+  httpd:
+    image: jstubbs/apim_httpd_base
+    ports:
+      - "80:80"
+      - "443:443"
+  #    - "8080:80"
+  #    - "8443:443"
+
+  agaveclients:
+    image: agaveplatform/agave_clients:latest
+    # Uncomment the following line (and comment the build line just above) to build from source
+  #  build: ../
+    ports:
+      - "8001:80"
+    links:
+      - apim
+      - mysql
+    environment:
+      HOST_IP:
+
+  agaveid:
+    image: agaveplatform/agave_id:latest
+    # Uncomment the following line (and comment the build line just above) to build from source
+  #  build: ../
+    ports:
+      - "8000:80"
+    links:
+      - ldap
+    environment:
+      HOST_IP:
+
+  apim:
+    image: agaveplatform/apim_base:0.3
+    ports:
+      - "9443:9443"
+      - "8243:8243"
+      - "6284:6284"
+    links:
+      - ldap
+      - mysql
+
+  ldap:
+    image: agaveplatform/slapd:latest
+    environment:
+      - LDAP_DOMAIN=agaveplatform
+      - LDAP_ORGANISATION="Agave"
+      - LDAP_ROOTPASS=p@ssword
+    ports:
+      - "10389:389"
+
+  mysql:
+    image: mysql:5.7
+    ports:
+      - "3306:3306"
