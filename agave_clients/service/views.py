@@ -9,15 +9,16 @@ import urllib
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import transaction
+from django.http import HttpResponse
 
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 import requests
 
-from common import auth
-from common.error import Error
-from common.responses import error_dict, success_dict, format_response, error_response, success_response
+from pycommon import auth
+from pycommon.error import Error
+from pycommon.responses import error_dict, success_dict, format_response, error_response, success_response
 
 from agave_clients.service.models import IdnOauthConsumerApps, AmApplicationKeyMapping
 
@@ -55,11 +56,12 @@ class Clients(APIView):
         try:
             applications = get_applications(request.wso2_cookies, request.wso2_username,)
         except Error as e:
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
         except Exception as e:
             logger.error("Uncaught exception trying to retrieve clients: " + str(e))
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
-        return Response(format_response(response_data=applications, msg="Clients retrieved successfully.", query_dict=request.query_params))
+            return error_response(msg=e.message)
+        return HttpResponse(format_response(response_data=applications, msg="Clients retrieved successfully.",
+                                        query_dict=request.query_params), content_type='application/json')
 
     @auth.authenticated
     def post(self, request, format=None):
@@ -73,29 +75,29 @@ class Clients(APIView):
         """
         parms = ['clientName']
         try:
-            parm_values = get_parms_from_request(request.DATA, parms)
+            parm_values = get_parms_from_request(request.data, parms)
             application = create_client_application(request.wso2_cookies,
                                                     request.wso2_username,
                                                     parm_values['clientName'],
-                                                    tier=request.DATA.get('tier', settings.DEFAULT_TIER),
-                                                    description=request.DATA.get('description',''),
-                                                    callbackUrl=request.DATA.get('callbackUrl', ''))
+                                                    tier=request.data.get('tier', settings.DEFAULT_TIER),
+                                                    description=request.data.get('description',''),
+                                                    callbackUrl=request.data.get('callbackUrl', ''))
             logger.info("Application created, id:" + str(application.get('application_id')))
             # add_apis(request.wso2_cookies, application.get('id'))
         except Error as e:
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
         except Exception as e:
             logger.error("Uncaught exception trying to create a new client: " + str(e))
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
 
         # we need to sanitize the application, but sanitize will remove the consumerSecret, which in
         # this one case we actually want to send back to the user:
         secret = application.pop("consumerSecret", None)
         sanitize_app(application)
         application['consumerSecret'] = secret
-        return Response(format_response(msg="Client created successfully.",
+        return HttpResponse(format_response(msg="Client created successfully.",
                                      response_data=application, query_dict=request.query_params),
-                        status=status.HTTP_201_CREATED)
+                        status=status.HTTP_201_CREATED, content_type='application/json')
 
 class ClientDetails(APIView):
     def perform_authentication(self, request):
@@ -109,12 +111,15 @@ class ClientDetails(APIView):
         try:
             delete_client(request.wso2_cookies, client_name)
         except Error as e:
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            logger.error("Exception trying to remove client: " + str(e))
+            return error_response(msg=e.message)
         except Exception as e:
             logger.error("Uncaught exception trying to remove client: " + str(e))
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
 
-        return Response(format_response(msg="Client removed successfully.", query_dict=request.query_params))
+        return HttpResponse(format_response(response_data=None, msg="Client removed successfully.",
+                                        query_dict=request.query_params),
+                                        content_type='application/json')
 
     @auth.authenticated
     def get(self, request, client_name, format=None):
@@ -124,12 +129,13 @@ class ClientDetails(APIView):
         try:
             app = get_application(request.wso2_cookies, request.wso2_username, client_name)
         except Error as e:
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
         except Exception as e:
             logger.error("Uncaught exception trying to retrieve client details: " + str(e))
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
-        return Response(format_response(msg="Client details retrieved successfully.",
-                                        response_data=app, query_dict=request.query_params))
+
+            return error_response(msg=e.message)
+        return HttpResponse(format_response(msg="Client details retrieved successfully.",
+                                        response_data=app, query_dict=request.query_params), content_type='application/json')
 
 class ClientSubscriptions(APIView):
     def perform_authentication(self, request):
@@ -143,13 +149,13 @@ class ClientSubscriptions(APIView):
         try:
             subscriptions = get_subscriptions(request.wso2_cookies, client_name)
         except Error as e:
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
         except Exception as e:
             logger.error("Unhandled exception in ClientSubscription: " + str(e))
-            return Response(error_dict(msg="Unable to retrieve subscriptions."),
-                            status.HTTP_400_BAD_REQUEST)
-        return Response(format_response(msg="Client subscriptions retrieved successfully.",
-                                     response_data=subscriptions, query_dict=request.query_params))
+            return error_response(msg="Unable to retrieve subscriptions.")
+        return HttpResponse(format_response(msg="Client subscriptions retrieved successfully.",
+                                     response_data=subscriptions, query_dict=request.query_params),
+                        content_type='application/json')
 
     @auth.authenticated
     def post(self, request, client_name, format=None):
@@ -164,28 +170,28 @@ class ClientSubscriptions(APIView):
         # we cannot use the LdapUserSerializer class.
         parms = ['apiName']
         try:
-            parm_values = get_parms_from_request(request.DATA, parms)
+            parm_values = get_parms_from_request(request.data, parms)
             if parm_values['apiName'] == '*':
-                add_apis(request.wso2_cookies, client_name, tier=request.DATA.get('tier', settings.DEFAULT_TIER))
+                add_apis(request.wso2_cookies, client_name, tier=request.data.get('tier', settings.DEFAULT_TIER))
             else:
                 add_api(request.wso2_cookies,
                         client_name,
                         parm_values['apiName'],
-                        request.DATA.get('apiVersion'),
-                        request.DATA.get('apiProvider'),
-                        request.DATA.get('tier', settings.DEFAULT_TIER))
+                        request.data.get('apiVersion'),
+                        request.data.get('apiProvider'),
+                        request.data.get('tier', settings.DEFAULT_TIER))
         except Error as e:
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
         except Exception as e:
             logger.error("Unhandled exception in ClientSubscription: " + str(e))
-            return Response(error_dict(msg="Unable to subscribe client to Agave APIs."),
-                            status.HTTP_400_BAD_REQUEST)
+            return error_response(msg="Unable to subscribe client to Agave APIs.")
         if parm_values['apiName'] == '*':
-            return Response(format_response(msg="Client " + client_name + " has been subscribed to Agave APIs.",
-                                            query_dict=request.query_params))
+            return HttpResponse(format_response(msg="Client " + client_name + " has been subscribed to Agave APIs.",
+                                            response_data=None, query_dict=request.query_params), content_type='application/json')
         else:
-            return Response(format_response(msg="Client " + client_name + " has been subscribed to "
-                                             + parm_values['apiName'] + ".", query_dict=request.query_params))
+            return HttpResponse(format_response(msg="Client " + client_name + " has been subscribed to "
+                                             + parm_values['apiName'] + ".",
+                                            response_data=None, query_dict=request.query_params), content_type='application/json')
 
     @auth.authenticated
     def delete(self, request, client_name, format=None):
@@ -197,27 +203,28 @@ class ClientSubscriptions(APIView):
         """
         parms = ['apiName']
         try:
-            parm_values = get_parms_from_request(request.DATA, parms)
+            parm_values = get_parms_from_request(request.data, parms)
             if parm_values['apiName'] == '*':
                 remove_apis(request.wso2_cookies, client_name)
             else:
                 remove_api(request.wso2_cookies,
                         client_name,
                         parm_values['apiName'],
-                        request.DATA.get('apiVersion'),
-                        request.DATA.get('apiProvider'))
+                        request.data.get('apiVersion'),
+                        request.data.get('apiProvider'))
         except Error as e:
-            return Response(error_dict(msg=e.message), status.HTTP_400_BAD_REQUEST)
+            return error_response(msg=e.message)
         except Exception as e:
             logger.error("Unhandled exception in ClientSubscription: " + str(e))
-            return Response(error_dict(msg="Unable to remove API from client."),
-                            status.HTTP_400_BAD_REQUEST)
+            return error_response(msg="Unable to remove API from client.")
         if parm_values['apiName'] == '*':
-            return Response(format_response(msg="All APIs have been removed from the client "
-                                             + client_name + ".", query_dict=request.query_params))
+            return HttpResponse(format_response(msg="All APIs have been removed from the client "
+                                             + client_name + ".",
+                                            response_data=None, query_dict=request.query_params), content_type='application/json')
         else:
-            return Response(format_response(msg=parm_values['apiName'] + " has been removed from the client " +
-                                             client_name + ".", query_dict=request.query_params))
+            return HttpResponse(format_response(msg=parm_values['apiName'] + " has been removed from the client " +
+                                             client_name + ".",
+                                            response_data=None, query_dict=request.query_params), content_type='application/json')
 
 
 def get_parms_from_request(request_dict, parms):
@@ -266,7 +273,7 @@ def create_client_application(cookies, username, application_name, tier=settings
     if rsp.json().get('error'):
         raise Error("Unable to create application: " +
                     str(rsp.json().get('message')))
-    logger.info("Response from WSO2 ADD_APP: " + str(rsp.json()) + " Status code: " + str(rsp.status_code))
+    logger.info("Response from WSO2 ADD_APP: " + str(rsp.json()) + " Status code: " + str(rsp.status_code), content_type='application/json')
 
     # nothing returned in the wso2 response and the client credentials are not generated,
     # so we need to get the client just created and generate credentials for it.

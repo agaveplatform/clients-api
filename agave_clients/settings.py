@@ -7,7 +7,8 @@ import os
 # sensitive settings:
 try:
     from deployment_settings import *
-except:
+except Exception as f:
+    print "Unable to import deployment_settings" + str(f)
     try:
         from local_settings import *
     except Exception as e:

@@ -1,8 +1,4 @@
 MySQL-python
-django==1.7
 django-cors-headers
-djangorestframework==2.3.13
-pycrypto
-PyJWT==0.1.9
-requests
--e git+https://bitbucket.com/agaveapi/agave_pycommon.git#egg=agave_common
+djangorestframework
+-e git+https://github.com/agaveplatform/agave-pycommon.git#egg=pycommon

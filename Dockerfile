@@ -1,8 +1,8 @@
 # Agave clients service for generating OAuth2 client applications for the WSO2 API Manager platform.
 # Image: jstubbs/agave_clients
 
-FROM jstubbs/template_compiler
-MAINTAINER Joe Stubbs
+FROM agaveplatform/template_compiler
+LABEL MAINTAINER="Rion Dooley<deardooley@gmail.com>"
 
 # Manually set up the apache environment variables
 ENV APACHE_RUN_USER www-data
@@ -17,7 +17,6 @@ RUN apt-get update && \
 											 python-pip \
 											 git \
 											 apache2 \
-											 apache2-mpm-prefork \
 											 apache2-utils \
 											 libexpat1 \
 											 ssl-cert \
@@ -25,10 +24,13 @@ RUN apt-get update && \
 											 lynx \
 											 libldap2-dev \
 											 libsasl2-dev \
-											 python-mysqldb && \
+											 python-mysqldb \
+											 libmysqlclient-dev && \
 		mkdir /code
 ADD requirements.txt /code/
-RUN pip install -r /code/requirements.txt
+RUN python -m pip install --upgrade pip setuptools && \
+		python -m pip install djangorestframework && \
+		pip install -r /code/requirements.txt
 
 ADD agave_clients /code/agave_clients/agave_clients
 ADD manage.py /code/agave_clients/
