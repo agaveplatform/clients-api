@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+
+  clients:
+    image: clients-api:develop
+    # Uncomment the following line (and comment the build line just above) to build from source
+    build:
+      context: .
+    ports:
+      - "9000:80"
+    environment:
+      PYTHONUNBUFFERED: 1
+      DJANGO_SETTINGS_MODULE: 'agave_clients.settings'
+      agave_apim_host: 'host.docker.internal:9443'
+      tenant_id: 'sandbox'
+      agave_id_app_base: 'https://sandbox.k8s.agaveplatform.org'
+      agave_id_debug: 'TRUE'
+      agave_clients_additional_apis: ''
+      MYSQL_HOST: 'host.docker.internal'
+      MYSQL_PORT: 3306
+      MYSQL_PASSWORD: 'p@ssword'
+      MYSQL_USER: 'root'
+      AGAVE_VERSION: 2.2.27
+    volumes:
+      - ./agave_clients:/code/agave_clients/agave_clients
