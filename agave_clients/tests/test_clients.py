@@ -29,8 +29,8 @@ import requests
 
 
 BASE_URL = os.environ.get('base_url', 'http://127.0.0.1:9000')
-username = os.environ.get('username', 'jdoe')
-password = os.environ.get('password', 'abcde')
+username = os.environ.get('username', 'testuser')
+password = os.environ.get('password', 'testuser')
 
 AGAVE_API_VERSION = 'v2'
 AGAVE_APIS = [{'name':'Apps', 'version':AGAVE_API_VERSION, 'provider':'admin'},
@@ -85,6 +85,7 @@ def validate_response(rsp):
     assert rsp.status_code in [200, 201]
     assert 'application/json' in rsp.headers['content-type']
     data = json.loads(rsp.content)
+    print(json.dumps(data, indent=2, sort_keys=False))
     assert 'message' in data.keys()
     assert 'status' in data.keys()
     assert 'result' in data.keys()
@@ -125,111 +126,109 @@ def delete_client(client_attrs):
 # -----
 
 def test_list_clients(headers, client_attrs):
-    url = '{}/clients/v2'.format(BASE_URL)
+    url = '{}/clients/v2?pretty=true'.format(BASE_URL)
     rsp = requests.get(url, headers=headers)
     clients = validate_response(rsp)
     for client in clients:
-        validate_client(client)
+        validate_client(client, secret_present=False)
         if client.get('name') == client_attrs.get('clientName'):
             delete_client(client_attrs)
 
 def test_create_client(headers, client_attrs):
-    url = '{}/clients/v2'.format(BASE_URL)
+    url = '{}/clients/v2?pretty=true'.format(BASE_URL)
     rsp = requests.post(url, data=client_attrs, headers=headers)
     client = validate_response(rsp)
     validate_client(client, secret_present=True)
 
 def test_list_client_details(headers, client_attrs):
-    url = '{}/clients/v2/{}'.format(BASE_URL, client_attrs.get('clientName'))
+    url = '{}/clients/v2/{}?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
     rsp = requests.get(url, headers=headers)
     client = validate_response(rsp)
     validate_client(client)
     assert client.get('name') == client_attrs.get('clientName')
     assert client.get('description') == client_attrs.get('description')
     assert client.get('callbackUrl') == client_attrs.get('callbackUrl')
-
-def test_list_subscriptions(headers, client_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    rsp = requests.get(url, headers=headers)
-    subs = validate_response(rsp)
-    assert len(subs) >= len(AGAVE_APIS)
-    for sub in subs:
-        validate_subscription(sub)
-        assert sub.get('apiName') in [api.get('name') for api in AGAVE_APIS]
-    for api in AGAVE_APIS:
-        assert api.get('name') in [sub.get('apiName') for sub in subs]
-
-def test_add_subscription(headers, client_attrs, sub_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    rsp = requests.post(url, data=sub_attrs, headers=headers)
-    validate_response(rsp)
-
-def test_ensure_added_subscription_present(headers, client_attrs, sub_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    rsp = requests.get(url, headers=headers)
-    subs = validate_response(rsp)
-    for sub in subs:
-        if sub.get('apiName') == sub_attrs.get('apiName'):
-            break
-    else:
-        # didn't find the subscription
-        assert False
-
-def test_delete_subscription(headers, client_attrs, sub_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    rsp = requests.delete(url, headers=headers, data=sub_attrs)
-    validate_response(rsp)
-
-def test_ensure_deleted_subscription_gone(headers, client_attrs, sub_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    rsp = requests.get(url, headers=headers)
-    subs = validate_response(rsp)
-    for sub in subs:
-        if sub.get('apiName') == sub_attrs.get('apiName'):
-            # found the test subscription
-            assert False
-
-def test_delete_all_subscriptions(headers, client_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    data = {'apiName': '*'}
-    rsp = requests.delete(url, headers=headers, data=data)
-    validate_response(rsp)
-
-def test_ensure_all_subscriptions_gone(headers, client_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    rsp = requests.get(url, headers=headers)
-    subs = validate_response(rsp)
-    assert len(subs) == 0
-
-def test_add_core_api_subscription(headers, client_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    data = {'apiName': 'Files',
-            'apiVersion': 'v2',
-            'apiProvider': 'admin',
-            'tier': 'Unlimited'}
-    rsp = requests.post(url, data=data, headers=headers)
-    validate_response(rsp)
-
-def test_ensure_added_core_subscription_present(headers, client_attrs):
-    url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
-    rsp = requests.get(url, headers=headers)
-    subs = validate_response(rsp)
-    for sub in subs:
-        if sub.get('apiName') == 'Files':
-            break
-    else:
-        # didn't find the subscription
-        assert False
-
-
+#
+# def test_list_subscriptions(headers, client_attrs):
+#     url = '{}/clients/v2/{}/subscriptions?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
+#     rsp = requests.get(url, headers=headers)
+#     subs = validate_response(rsp)
+#     assert len(subs) >= len(AGAVE_APIS)
+#     for sub in subs:
+#         validate_subscription(sub)
+#         assert sub.get('apiName') in [api.get('name') for api in AGAVE_APIS]
+#     for api in AGAVE_APIS:
+#         assert api.get('name') in [sub.get('apiName') for sub in subs]
+#
+# def test_add_subscription(headers, client_attrs, sub_attrs):
+#     url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
+#     rsp = requests.post(url, data=sub_attrs, headers=headers)
+#     validate_response(rsp)
+#
+# def test_ensure_added_subscription_present(headers, client_attrs, sub_attrs):
+#     url = '{}/clients/v2/{}/subscriptions?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
+#     rsp = requests.get(url, headers=headers)
+#     subs = validate_response(rsp)
+#     for sub in subs:
+#         if sub.get('apiName') == sub_attrs.get('apiName'):
+#             break
+#     else:
+#         # didn't find the subscription
+#         assert False
+#
+# def test_delete_subscription(headers, client_attrs, sub_attrs):
+#     url = '{}/clients/v2/{}/subscriptions?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
+#     rsp = requests.delete(url, headers=headers, data=sub_attrs)
+#     validate_response(rsp)
+#
+# def test_ensure_deleted_subscription_gone(headers, client_attrs, sub_attrs):
+#     url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
+#     rsp = requests.get(url, headers=headers)
+#     subs = validate_response(rsp)
+#     for sub in subs:
+#         if sub.get('apiName') == sub_attrs.get('apiName'):
+#             # found the test subscription
+#             assert False
+#
+# def test_delete_all_subscriptions(headers, client_attrs):
+#     url = '{}/clients/v2/{}/subscriptions'.format(BASE_URL, client_attrs.get('clientName'))
+#     data = {'apiName': '*'}
+#     rsp = requests.delete(url, headers=headers, data=data)
+#     validate_response(rsp)
+#
+# def test_ensure_all_subscriptions_gone(headers, client_attrs):
+#     url = '{}/clients/v2/{}/subscriptions?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
+#     rsp = requests.get(url, headers=headers)
+#     subs = validate_response(rsp)
+#     assert len(subs) == 0
+#
+# def test_add_core_api_subscription(headers, client_attrs):
+#     url = '{}/clients/v2/{}/subscriptions?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
+#     data = {'apiName': 'Files',
+#             'apiVersion': 'v2',
+#             'apiProvider': 'admin',
+#             'tier': 'Unlimited'}
+#     rsp = requests.post(url, data=data, headers=headers)
+#     validate_response(rsp)
+#
+# def test_ensure_added_core_subscription_present(headers, client_attrs):
+#     url = '{}/clients/v2/{}/subscriptions?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
+#     rsp = requests.get(url, headers=headers)
+#     subs = validate_response(rsp)
+#     for sub in subs:
+#         if sub.get('apiName') == 'Files':
+#             break
+#     else:
+#         # didn't find the subscription
+#         assert False
 
 def test_delete_client(headers, client_attrs):
-    url = '{}/clients/v2/{}'.format(BASE_URL, client_attrs.get('clientName'))
+    url = '{}/clients/v2/{}?pretty=true'.format(BASE_URL, client_attrs.get('clientName'))
     rsp = requests.delete(url, headers=headers)
     client = validate_response(rsp)
 
 def test_ensure_deleted_client_gone(headers, client_attrs):
-    url = '{}/clients/v2'.format(BASE_URL)
+    url = '{}/clients/v2?pretty=true'.format(BASE_URL)
     rsp = requests.get(url, headers=headers)
     clients = validate_response(rsp)
     for client in clients:

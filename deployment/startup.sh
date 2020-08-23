@@ -1,6 +1,7 @@
 #!/bin/bash
 
-fig up -d
+pushd deployment
+docker-compose up -d
 echo "Waiting for services to start..."
 sleep 5
 echo "Adding sandbox ou and testuser user..."
@@ -19,3 +20,4 @@ echo "Examples:"
 echo "curl localhost:8001/profiles/v2/"
 echo ""
 echo "Stop the services with docker-compose stop."
+popd

@@ -14,7 +14,10 @@ from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 from pycommon import auth
 from pycommon.error import Error
@@ -23,20 +26,19 @@ from pycommon.responses import error_dict, success_dict, format_response, error_
 from agave_clients.service.models import IdnOauthConsumerApps, AmApplicationKeyMapping
 
 
-
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
-AGAVE_APIS = [{'name':'Apps', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Files', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Jobs', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Meta', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Monitors', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Notifications', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Postits', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Profiles', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Systems', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
-            {'name':'Transforms', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},]
+AGAVE_APIS = [{'name':'Apps',          'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Files',         'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Jobs',          'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Meta',          'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Monitors',      'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Notifications', 'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Postits',       'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Profiles',      'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Systems',       'version':settings.AGAVE_API_VERSION, 'provider':'admin'},
+              {'name':'Transforms',    'version':settings.AGAVE_API_VERSION, 'provider':'admin'},]
 
 AGAVE_APIS.extend(settings.ADDITIONAL_APIS)
 
@@ -82,12 +84,13 @@ class Clients(APIView):
                                                     tier=request.data.get('tier', settings.DEFAULT_TIER),
                                                     description=request.data.get('description',''),
                                                     callbackUrl=request.data.get('callbackUrl', ''))
+            logger.info(application)
             logger.info("Application created, id:" + str(application.get('application_id')))
             # add_apis(request.wso2_cookies, application.get('id'))
         except Error as e:
             return error_response(msg=e.message)
         except Exception as e:
-            logger.error("Uncaught exception trying to create a new client: " + str(e))
+            logger.error("Uncaught exception trying to create a new client: " + e.message)
             return error_response(msg=e.message)
 
         # we need to sanitize the application, but sanitize will remove the consumerSecret, which in
@@ -273,7 +276,7 @@ def create_client_application(cookies, username, application_name, tier=settings
     if rsp.json().get('error'):
         raise Error("Unable to create application: " +
                     str(rsp.json().get('message')))
-    logger.info("Response from WSO2 ADD_APP: " + str(rsp.json()) + " Status code: " + str(rsp.status_code), content_type='application/json')
+    logger.info("Response from WSO2 ADD_APP: " + str(rsp.json()) + " Status code: " + str(rsp.status_code))
 
     # nothing returned in the wso2 response and the client credentials are not generated,
     # so we need to get the client just created and generate credentials for it.
@@ -295,8 +298,8 @@ def create_client_application(cookies, username, application_name, tier=settings
             wso2_app.callback_url = callbackUrl
             wso2_app.save()
         except Exception as e:
-            logger.info("Got an exception trying to update the callback URL. Exception type: "+
-            str(type(e)) + " Exception: " + str(e))
+            logger.info("Got an exception trying to update the callback URL. Exception type: "
+                        + str(type(e)) + " Exception: " + str(e))
 
     # TODO: assuming everything worked as expected, we write a CLIENT_CREATED event to the notification queue
 
@@ -316,7 +319,7 @@ def add_api(cookies, client_name, api_name, api_version, api_provider, tier=sett
         logger.info("data:" + str(data))
     except Exception as e:
         raise Error("Unable to subscribe to API " + api_name +
-                    "; message: " + str(e))
+                    "; message: " + str(e.message))
     try:
         json_rsp = r.json()
     except Exception as e:
@@ -471,11 +474,10 @@ def add_hyperlinks(app, username):
     """
     Add references to self, subscriber and subscriptions.
     """
-    app['_links'] = {'self': {'href': settings.APP_BASE + reverse('clients') + urllib.quote(app.get('name'))},
-                     'subscriber': {'href': settings.APP_BASE + '/profiles/'
-                                            + settings.AGAVE_API_VERSION + '/' + username},
-                     'subscriptions': {'href': settings.APP_BASE + reverse('client_subscriptions',
-                                                                           args=[app.get('name')])}}
+    app['_links'] = {'self':          {'href': settings.APP_BASE + reverse('clients') + urllib.quote(app.get('name'))},
+                     'subscriber':    {'href': settings.APP_BASE + '/profiles/' + settings.AGAVE_API_VERSION + '/' + username},
+                     'subscriptions': {'href': settings.APP_BASE + reverse('client_subscriptions', args=[app.get('name')])}
+                    }
 
 
 def sanitize_app(app):
@@ -555,9 +557,8 @@ def add_sub_hyperlinks(sub, client_name):
     """
     Add references to self, api and client.
     """
-    sub['_links'] = {'self': {'href': settings.APP_BASE + reverse('client_subscriptions',
-                                                                  args=[client_name])},
-                     'api': {'href': settings.APP_BASE + sub.get('context') + '/'},
+    sub['_links'] = {'self':   {'href': settings.APP_BASE + reverse('client_subscriptions', args=[client_name])},
+                     'api':    {'href': settings.APP_BASE + sub.get('context') + '/'},
                      'client': {'href': settings.APP_BASE + reverse('client_details', args=[client_name])},
                      }
 

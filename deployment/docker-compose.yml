@@ -3,17 +3,16 @@ version: '3'
 services:
 
   httpd:
-    image: jstubbs/apim_httpd_base
+    image: agaveplatform/apim_httpd:certbot
     ports:
       - "80:80"
       - "443:443"
-  #    - "8080:80"
-  #    - "8443:443"
 
   agaveclients:
-    image: agaveplatform/agave_clients:latest
+    image: clients-api:latest
     # Uncomment the following line (and comment the build line just above) to build from source
-  #  build: ../
+    build:
+      context: ../
     ports:
       - "8001:80"
     links:
@@ -34,7 +33,7 @@ services:
       HOST_IP:
 
   apim:
-    image: agaveplatform/apim_base:0.3
+    image: agaveplatform/apim19_base:0.3
     ports:
       - "9443:9443"
       - "8243:8243"

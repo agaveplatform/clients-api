@@ -1,7 +1,6 @@
-# Agave clients service for generating OAuth2 client applications for the WSO2 API Manager platform.
-# Image: jstubbs/agave_clients
+# Agave clients service for generating OAuth2 client applications for the WSO2 API Manager v1.9.
 
-FROM agaveplatform/template_compiler
+FROM agaveplatform/template_compiler:18.04
 LABEL MAINTAINER="Rion Dooley<deardooley@gmail.com>"
 
 # Manually set up the apache environment variables
@@ -40,6 +39,8 @@ RUN touch /code/agave_clients/agave_clients/running_in_docker && \
 
 ADD deployment/wsgi.load /etc/apache2/mods-available/
 ADD deployment/apache2.conf /etc/apache2/sites-enabled/000-default.conf
+
+ENV DJANGO_SETTINGS_MODULE "agave_clients.settings"
 
 EXPOSE 80
 

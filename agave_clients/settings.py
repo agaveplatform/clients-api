@@ -8,11 +8,11 @@ import os
 try:
     from deployment_settings import *
 except Exception as f:
-    print "Unable to import deployment_settings" + str(f)
+    print "Unable to import deployment_settings " + str(f)
     try:
         from local_settings import *
     except Exception as e:
-        print "Unable to import local_settings" + str(e)
+        print "Unable to import local_settings " + str(e)
         from local_settings_example import *
 
 # ---------------
@@ -26,7 +26,7 @@ AUTH_FUNC = 'basicauth'
 # WSO2 server configuration for API endpoint
 # -------------------------------------------
 TENANT_HOST = tenant_host
-APIM_STORE_SERVICES_BASE_URL = "https://" + tenant_host + "/store/site/blocks"
+APIM_STORE_SERVICES_BASE_URL = "https://" + TENANT_HOST + "/store/site/blocks"
 STORE_AUTH_URL = "/user/login/ajax/login.jag"
 STORE_SUBSCRIPTION_URL = '/subscription/subscription-add/ajax/subscription-add.jag'
 STORE_REMOVE_SUB_URL = '/subscription/subscription-remove/ajax/subscription-remove.jag'
@@ -206,6 +206,11 @@ LOGGING = {
     },
     'loggers': {
         'agave_id': {
+            'handlers': ['console', 'null'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'agave_clients': {
             'handlers': ['console', 'null'],
             'propagate': True,
             'level': 'DEBUG',
