@@ -1,7 +1,7 @@
 MySQL-python
 django==1.7
 django-cors-headers
-djangorestframework==2.3.13
+djangorestframework==3.11.2
 pycrypto
 PyJWT==0.1.9
 requests
